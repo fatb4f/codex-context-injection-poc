@@ -27,6 +27,7 @@ package poc
 		"mcp_tool_output"
 
 	expectedNativeContextInjection: bool
+	proofRequired: bool
 
 	expectedItemKind:
 		"message" |
@@ -61,6 +62,8 @@ projection: #ContextProjection & {
 					f.target == "available_skills" ||
 					f.target == "turn_start_additional_context" ||
 					f.target == "hook_prompt_fragment"
+
+				proofRequired: f.target != "turn_start_additional_context"
 
 				expectedItemKind: {
 					if f.target == "json_tool_output" {
