@@ -1,0 +1,4 @@
+/upstream/openai-codex/
+/.tmp/
+*.zip
+.DS_Store

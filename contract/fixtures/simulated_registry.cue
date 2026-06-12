@@ -1,6 +1,6 @@
 package poc
 
-registry: #Registry & {
+#Registry: {
 	version: "poc.registry/v1"
 	id: "simulated_contract_registry"
 	authorityRoot: "contract/"
@@ -123,3 +123,5 @@ registry: #Registry & {
 		},
 	]
 }
+
+registry: #Registry

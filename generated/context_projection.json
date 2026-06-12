@@ -1,68 +1,68 @@
 {
-  "version": "poc.context-projection/v1",
-  "registryID": "simulated_contract_registry",
   "budget": {
     "maxTurnStartTokens": 300,
     "maxUserPromptHintTokens": 200
   },
   "fragments": {
     "sim.internal_registry_context": {
+      "expectedItemKind": "message",
+      "expectedNativeContextInjection": true,
+      "expectedRole": "user",
       "id": "sim.internal_registry_context",
-      "sourceID": "sim.schema",
-      "target": "internal_model_context",
-      "expectedNativeContextInjection": true,
-      "expectedItemKind": "message",
-      "expectedRole": "user",
+      "renderedBody": "POC_SENTINEL_INTERNAL_CONTEXT: contract/ is the only active authority root.",
       "sentinel": "POC_SENTINEL_INTERNAL_CONTEXT",
-      "renderedBody": "POC_SENTINEL_INTERNAL_CONTEXT: contract/ is the only active authority root."
-    },
-    "sim.skill_context": {
-      "id": "sim.skill_context",
       "sourceID": "sim.schema",
-      "target": "available_skills",
-      "expectedNativeContextInjection": true,
-      "expectedItemKind": "message",
-      "expectedRole": "developer",
-      "sentinel": "POC_SENTINEL_AVAILABLE_SKILLS",
-      "renderedBody": "POC_SENTINEL_AVAILABLE_SKILLS: simulated skill context."
-    },
-    "sim.turn_start_additional_context": {
-      "id": "sim.turn_start_additional_context",
-      "sourceID": "sim.schema",
-      "target": "turn_start_additional_context",
-      "expectedNativeContextInjection": true,
-      "expectedItemKind": "message",
-      "expectedRole": "developer",
-      "sentinel": "POC_SENTINEL_ADDITIONAL_CONTEXT",
-      "renderedBody": "POC_SENTINEL_ADDITIONAL_CONTEXT: simulated client-provided application context."
-    },
-    "sim.prompt_hint": {
-      "id": "sim.prompt_hint",
-      "sourceID": "sim.resolver",
-      "target": "hook_prompt_fragment",
-      "expectedNativeContextInjection": true,
-      "expectedItemKind": "message",
-      "expectedRole": "user",
-      "sentinel": "POC_SENTINEL_HOOK_HINT",
-      "renderedBody": "POC_SENTINEL_HOOK_HINT: selectedFragments=[sim.internal_registry_context]."
+      "target": "internal_model_context"
     },
     "sim.json_tool_result": {
-      "id": "sim.json_tool_result",
-      "sourceID": "sim.resolver",
-      "target": "json_tool_output",
-      "expectedNativeContextInjection": false,
       "expectedItemKind": "function_call_output",
+      "expectedNativeContextInjection": false,
+      "id": "sim.json_tool_result",
+      "renderedBody": "POC_SENTINEL_JSON_TOOL_OUTPUT",
       "sentinel": "POC_SENTINEL_JSON_TOOL_OUTPUT",
-      "renderedBody": "POC_SENTINEL_JSON_TOOL_OUTPUT"
+      "sourceID": "sim.resolver",
+      "target": "json_tool_output"
     },
     "sim.mcp_tool_result": {
-      "id": "sim.mcp_tool_result",
-      "sourceID": "sim.resolver",
-      "target": "mcp_tool_output",
-      "expectedNativeContextInjection": false,
       "expectedItemKind": "mcp_tool_call_output",
+      "expectedNativeContextInjection": false,
+      "id": "sim.mcp_tool_result",
+      "renderedBody": "POC_SENTINEL_MCP_TOOL_OUTPUT",
       "sentinel": "POC_SENTINEL_MCP_TOOL_OUTPUT",
-      "renderedBody": "POC_SENTINEL_MCP_TOOL_OUTPUT"
+      "sourceID": "sim.resolver",
+      "target": "mcp_tool_output"
+    },
+    "sim.prompt_hint": {
+      "expectedItemKind": "message",
+      "expectedNativeContextInjection": true,
+      "expectedRole": "user",
+      "id": "sim.prompt_hint",
+      "renderedBody": "POC_SENTINEL_HOOK_HINT: selectedFragments=[sim.internal_registry_context].",
+      "sentinel": "POC_SENTINEL_HOOK_HINT",
+      "sourceID": "sim.resolver",
+      "target": "hook_prompt_fragment"
+    },
+    "sim.skill_context": {
+      "expectedItemKind": "message",
+      "expectedNativeContextInjection": true,
+      "expectedRole": "developer",
+      "id": "sim.skill_context",
+      "renderedBody": "POC_SENTINEL_AVAILABLE_SKILLS: simulated skill context.",
+      "sentinel": "POC_SENTINEL_AVAILABLE_SKILLS",
+      "sourceID": "sim.schema",
+      "target": "available_skills"
+    },
+    "sim.turn_start_additional_context": {
+      "expectedItemKind": "message",
+      "expectedNativeContextInjection": true,
+      "expectedRole": "developer",
+      "id": "sim.turn_start_additional_context",
+      "renderedBody": "POC_SENTINEL_ADDITIONAL_CONTEXT: simulated client-provided application context.",
+      "sentinel": "POC_SENTINEL_ADDITIONAL_CONTEXT",
+      "sourceID": "sim.schema",
+      "target": "turn_start_additional_context"
     }
-  }
+  },
+  "registryID": "simulated_contract_registry",
+  "version": "poc.context-projection/v1"
 }

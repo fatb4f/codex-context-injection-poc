@@ -3,7 +3,7 @@ package poc
 #Registry: {
 	version: "poc.registry/v1"
 
-	id: string
+	id: "simulated_contract_registry"
 
 	authorityRoot: "contract/"
 
@@ -13,6 +13,8 @@ package poc
 
 	constraints: [...#Constraint]
 }
+
+registry: #Registry
 
 #Source: {
 	id: string

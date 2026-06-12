@@ -3,7 +3,7 @@ package poc
 #ContextProjection: {
 	version: "poc.context-projection/v1"
 
-	registryID: string
+	registryID: "simulated_contract_registry"
 
 	fragments: [string]: #ProjectedFragment
 
@@ -74,14 +74,29 @@ projection: #ContextProjection & {
 					}
 				}
 
-				expectedRole: {
-					if f.target == "available_skills" {"developer"}
-					if f.target == "internal_model_context" {"user"}
-					if f.target == "turn_start_additional_context" {"developer"}
-					if f.target == "hook_prompt_fragment" {"user"}
+				if f.target == "available_skills" {
+					expectedRole: "developer"
+					sentinel: "POC_SENTINEL_AVAILABLE_SKILLS"
+				}
+				if f.target == "internal_model_context" {
+					expectedRole: "user"
+					sentinel: "POC_SENTINEL_INTERNAL_CONTEXT"
+				}
+				if f.target == "turn_start_additional_context" {
+					expectedRole: "developer"
+					sentinel: "POC_SENTINEL_ADDITIONAL_CONTEXT"
+				}
+				if f.target == "hook_prompt_fragment" {
+					expectedRole: "user"
+					sentinel: "POC_SENTINEL_HOOK_HINT"
+				}
+				if f.target == "json_tool_output" {
+					sentinel: "POC_SENTINEL_JSON_TOOL_OUTPUT"
+				}
+				if f.target == "mcp_tool_output" {
+					sentinel: "POC_SENTINEL_MCP_TOOL_OUTPUT"
 				}
 
-				sentinel:     f.body =~ "(POC_SENTINEL_[A-Z0-9_]+)" // generator extracts exact sentinel
 				renderedBody:  f.body
 			}
 		}

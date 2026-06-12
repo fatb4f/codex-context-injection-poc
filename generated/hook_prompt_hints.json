@@ -1,19 +1,19 @@
 {
-  "version": "resolver.user-prompt-submit-hints/v1",
+  "hints": [
+    {
+      "confidence": "high",
+      "fragmentID": "sim.internal_registry_context",
+      "id": "hint.sim.prompt_hint",
+      "kind": "fragment-selection",
+      "policy": {
+        "toolExposure": "deny"
+      },
+      "reason": "Simulated prompt selects the registry context fragment."
+    }
+  ],
   "selectedFragments": [
     "sim.internal_registry_context"
   ],
-  "hints": [
-    {
-      "id": "hint.sim.prompt_hint",
-      "kind": "fragment-selection",
-      "fragmentID": "sim.internal_registry_context",
-      "reason": "Simulated prompt selects the registry context fragment.",
-      "confidence": "high",
-      "policy": {
-        "toolExposure": "deny"
-      }
-    }
-  ],
-  "sentinel": "POC_SENTINEL_HOOK_HINT"
+  "sentinel": "POC_SENTINEL_HOOK_HINT",
+  "version": "resolver.user-prompt-submit-hints/v1"
 }

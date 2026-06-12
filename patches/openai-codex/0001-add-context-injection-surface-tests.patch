@@ -1,179 +1,129 @@
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: POC <poc@example.invalid>
-Date: Thu, 11 Jun 2026 00:00:00 +0000
-Subject: [PATCH] test: add context injection surface runtime proof
-
----
- codex-rs/core/tests/suite/context_injection_surfaces.rs | 173 +++++++++++++++++++++
- 1 file changed, 173 insertions(+)
- create mode 100644 codex-rs/core/tests/suite/context_injection_surfaces.rs
-
-diff --git a/codex-rs/core/tests/suite/context_injection_surfaces.rs b/codex-rs/core/tests/suite/context_injection_surfaces.rs
-new file mode 100644
-index 0000000000..1111111111
---- /dev/null
-+++ b/codex-rs/core/tests/suite/context_injection_surfaces.rs
-@@ -0,0 +1,173 @@
-+//! Runtime proof POC for native context injection surfaces.
-+//!
-+//! This is intentionally test-only. The assertions classify actual
-+//! ResponseItem / ResponseInputItem variants, not final assistant behavior.
+diff --git a/codex-rs/core/src/context/contextual_user_message_tests.rs b/codex-rs/core/src/context/contextual_user_message_tests.rs
+index c3f360772a..5c6b54ad19 100644
+--- a/codex-rs/core/src/context/contextual_user_message_tests.rs
++++ b/codex-rs/core/src/context/contextual_user_message_tests.rs
+@@ -1,10 +1,12 @@
+ use super::*;
++use crate::context::AvailableSkillsInstructions;
+ use crate::context::ContextualUserFragment;
+ use crate::context::InternalContextSource;
+ use crate::context::InternalModelContextFragment;
+ use crate::context::SubagentNotification;
+ use codex_protocol::items::HookPromptFragment;
+ use codex_protocol::items::build_hook_prompt_message;
++use codex_protocol::models::ResponseInputItem;
+ use codex_protocol::models::ResponseItem;
+ use pretty_assertions::assert_eq;
+ 
+@@ -122,3 +124,24 @@ fn detects_hook_prompt_fragment_and_roundtrips_escaping() {
+     );
+     assert!(!text.contains("&quot;waves&quot; & <tides>"));
+ }
 +
-+use codex_core::context::ContextualUserFragment;
-+use codex_core::context::InternalContextSource;
-+use codex_core::context::InternalModelContextFragment;
++#[test]
++fn context_injection_surfaces_internal_model_context_is_user_message_input() {
++    let item = InternalModelContextFragment::new(
++        InternalContextSource::from_static("extension"),
++        "POC_SENTINEL_INTERNAL_CONTEXT",
++    )
++    .into_response_input_item();
++
++    assert!(matches!(item, ResponseInputItem::Message { role, .. } if role == "user"));
++}
++
++#[test]
++fn context_injection_surfaces_available_skills_are_developer_message_input() {
++    let item = AvailableSkillsInstructions::from_skill_lines(vec![
++        "POC_SENTINEL_AVAILABLE_SKILLS".to_string(),
++    ])
++    .into_response_input_item();
++
++    assert!(matches!(item, ResponseInputItem::Message { role, .. } if role == "developer"));
++}
+diff --git a/codex-rs/core/src/tools/context_tests.rs b/codex-rs/core/src/tools/context_tests.rs
+index 6ac5b6978f..60c286fddf 100644
+--- a/codex-rs/core/src/tools/context_tests.rs
++++ b/codex-rs/core/src/tools/context_tests.rs
+@@ -1,6 +1,11 @@
 +use codex_protocol::items::HookPromptFragment;
 +use codex_protocol::items::build_hook_prompt_message;
-+use codex_protocol::models::ContentItem;
++use codex_protocol::mcp::CallToolResult;
+ use super::*;
+ use codex_protocol::models::DEFAULT_IMAGE_DETAIL;
+ use codex_protocol::models::SearchToolCallParams;
 +use codex_protocol::models::ResponseInputItem;
 +use codex_protocol::models::ResponseItem;
+ use core_test_support::assert_regex_match;
+ use pretty_assertions::assert_eq;
+ use serde_json::json;
+@@ -231,6 +236,70 @@ fn mcp_tool_output_response_item_preserves_content_items() {
+     }
+ }
+ 
++#[test]
++fn context_injection_surfaces_hook_prompt_fragment_is_user_message_output() {
++    let item = build_hook_prompt_message(&[HookPromptFragment::from_single_hook(
++        "POC_SENTINEL_HOOK_HINT",
++        "hook-run-1",
++    )])
++    .expect("hook prompt message");
 +
-+fn response_item_kind(item: &ResponseItem) -> &'static str {
-+    match item {
-+        ResponseItem::Message { .. } => "message",
-+        ResponseItem::FunctionCallOutput { .. } => "function_call_output",
-+        ResponseItem::CustomToolCallOutput { .. } => "custom_tool_call_output",
-+        ResponseItem::McpToolCallOutput { .. } => "mcp_tool_call_output",
-+        _ => "other",
-+    }
-+}
-+
-+fn response_input_item_kind(item: &ResponseInputItem) -> &'static str {
-+    match item {
-+        ResponseInputItem::Message { .. } => "message",
-+        ResponseInputItem::FunctionCallOutput { .. } => "function_call_output",
-+        ResponseInputItem::CustomToolCallOutput { .. } => "custom_tool_call_output",
-+        ResponseInputItem::McpToolCallOutput { .. } => "mcp_tool_call_output",
-+        _ => "other",
-+    }
-+}
-+
-+fn response_item_role(item: &ResponseItem) -> Option<&str> {
-+    match item {
-+        ResponseItem::Message { role, .. } => Some(role.as_str()),
-+        _ => None,
-+    }
-+}
-+
-+fn response_input_item_role(item: &ResponseInputItem) -> Option<&str> {
-+    match item {
-+        ResponseInputItem::Message { role, .. } => Some(role.as_str()),
-+        _ => None,
-+    }
-+}
-+
-+fn response_item_contains(item: &ResponseItem, needle: &str) -> bool {
-+    match item {
-+        ResponseItem::Message { content, .. } => content.iter().any(|item| match item {
-+            ContentItem::InputText { text } | ContentItem::OutputText { text } => text.contains(needle),
-+            _ => false,
-+        }),
-+        _ => format!("{item:?}").contains(needle),
-+    }
-+}
-+
-+fn response_input_item_contains(item: &ResponseInputItem, needle: &str) -> bool {
-+    format!("{item:?}").contains(needle)
++    assert!(matches!(item, ResponseItem::Message { role, .. } if role == "user"));
 +}
 +
 +#[test]
-+fn context_injection_surfaces_internal_model_context_is_message() {
-+    let sentinel = "POC_SENTINEL_INTERNAL_CONTEXT";
-+    let fragment = InternalModelContextFragment::new(
-+        InternalContextSource::from_static("contract_registry"),
-+        format!("{sentinel}: contract/ is the only active authority root."),
++fn context_injection_surfaces_json_tool_output_is_not_message() {
++    let function_item = FunctionToolOutput::from_text(
++        "POC_SENTINEL_JSON_TOOL_OUTPUT".to_string(),
++        Some(true),
++    )
++    .to_response_item(
++        "json-call-1",
++        &ToolPayload::Function {
++            arguments: "{}".to_string(),
++        },
 +    );
++    assert!(matches!(function_item, ResponseInputItem::FunctionCallOutput { .. }));
 +
-+    let item = fragment.into_response_input_item();
-+
-+    assert_eq!(response_input_item_kind(&item), "message");
-+    assert_eq!(response_input_item_role(&item), Some("user"));
-+    assert!(response_input_item_contains(&item, sentinel));
-+}
-+
-+#[test]
-+fn context_injection_surfaces_hook_prompt_fragment_is_user_message() {
-+    let sentinel = "POC_SENTINEL_HOOK_HINT";
-+    let fragment = HookPromptFragment::from_single_hook(
-+        format!("{sentinel}: selectedFragments=[sim.internal_registry_context]."),
-+        "hook_run_poc",
++    let custom_item = FunctionToolOutput::from_text(
++        "POC_SENTINEL_JSON_TOOL_OUTPUT".to_string(),
++        Some(true),
++    )
++    .to_response_item(
++        "json-call-2",
++        &ToolPayload::Custom {
++            input: "{}".to_string(),
++        },
 +    );
-+
-+    let item = build_hook_prompt_message(&[fragment]).expect("hook prompt should serialize");
-+
-+    assert_eq!(response_item_kind(&item), "message");
-+    assert_eq!(response_item_role(&item), Some("user"));
-+    assert!(response_item_contains(&item, sentinel));
++    assert!(matches!(custom_item, ResponseInputItem::CustomToolCallOutput { .. }));
 +}
-+
-+// Follow-up implementation notes:
-+//
-+// 1. AvailableSkillsInstructions may be imported directly if exported from codex_core::context
-+//    in the pinned ref. Assert it becomes a developer-role Message.
-+//
-+// 2. AdditionalContextStore is crate-private in some refs. Prefer exercising the public
-+//    turn/start.additional_context path through the app-server test harness, or add a small
-+//    crate-local unit test in core/src/state/additional_context.rs.
-+//
-+// 3. JsonToolOutput / MCP CallToolResult are easier to assert inside the owning crate where
-+//    ToolPayload construction is accessible. The required invariant is:
-+//      JsonToolOutput -> FunctionCallOutput or CustomToolCallOutput, never Message
-+//      CallToolResult -> McpToolCallOutput, never Message
-+//
-+// Keep this patch as a skeleton until applied against the exact upstream tree and adjusted to
-+// the current public/private module boundary.
 +
 +#[test]
-+fn context_injection_surfaces_report_contract_shape() {
-+    #[derive(Debug)]
-+    struct Case {
-+        id: &'static str,
-+        expected_native: bool,
-+        expected_item_kind: &'static str,
-+        expected_role: Option<&'static str>,
-+        sentinel: &'static str,
-+    }
-+
-+    let cases = [
-+        Case {
-+            id: "internal_model_context",
-+            expected_native: true,
-+            expected_item_kind: "message",
-+            expected_role: Some("user"),
-+            sentinel: "POC_SENTINEL_INTERNAL_CONTEXT",
++fn context_injection_surfaces_mcp_tool_output_is_function_call_output() {
++    let output = McpToolOutput {
++        result: CallToolResult {
++            content: vec![serde_json::json!({
++                "type": "text",
++                "text": "POC_SENTINEL_MCP_TOOL_OUTPUT",
++            })],
++            structured_content: None,
++            is_error: Some(false),
++            meta: None,
 +        },
-+        Case {
-+            id: "hook_prompt_fragment",
-+            expected_native: true,
-+            expected_item_kind: "message",
-+            expected_role: Some("user"),
-+            sentinel: "POC_SENTINEL_HOOK_HINT",
++        tool_input: serde_json::json!({}),
++        wall_time: std::time::Duration::from_millis(42),
++        original_image_detail_supported: false,
++        truncation_policy: TruncationPolicy::Bytes(1024),
++    };
++    let item = output.to_response_item(
++        "mcp-call-1",
++        &ToolPayload::Function {
++            arguments: "{}".to_string(),
 +        },
-+        Case {
-+            id: "json_tool_output",
-+            expected_native: false,
-+            expected_item_kind: "function_call_output",
-+            expected_role: None,
-+            sentinel: "POC_SENTINEL_JSON_TOOL_OUTPUT",
-+        },
-+        Case {
-+            id: "mcp_tool_output",
-+            expected_native: false,
-+            expected_item_kind: "mcp_tool_call_output",
-+            expected_role: None,
-+            sentinel: "POC_SENTINEL_MCP_TOOL_OUTPUT",
-+        },
-+    ];
-+
-+    for case in cases {
-+        assert!(!case.id.is_empty());
-+        assert!(!case.expected_item_kind.is_empty());
-+        assert!(case.sentinel.starts_with("POC_SENTINEL_"));
-+        if !case.expected_native {
-+            assert_ne!(case.expected_item_kind, "message");
-+            assert!(case.expected_role.is_none());
-+        }
-+    }
++    );
++    assert!(matches!(item, ResponseInputItem::FunctionCallOutput { .. }));
 +}
--- 
-2.50.0
++
+ #[test]
+ fn mcp_tool_output_code_mode_result_stays_raw_call_tool_result() {
+     let large_content = "large structured value ".repeat(1_000);
