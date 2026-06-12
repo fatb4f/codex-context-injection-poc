@@ -33,7 +33,7 @@
   {
     "id": "mcp_tool_output",
     "expectedNativeContextInjection": false,
-    "observedItemKind": "mcp_tool_call_output",
+    "observedItemKind": "function_call_output",
     "containsSentinel": true,
     "pass": true
   }

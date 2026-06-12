@@ -18,6 +18,10 @@ package poc
 
 	sourceID: string
 
+	expectedChannel:
+		"message" |
+		"tool_output"
+
 	target:
 		"internal_model_context" |
 		"available_skills" |
@@ -63,6 +67,15 @@ projection: #ContextProjection & {
 					f.target == "turn_start_additional_context" ||
 					f.target == "hook_prompt_fragment"
 
+				expectedChannel: {
+					if f.target == "json_tool_output" || f.target == "mcp_tool_output" {
+						"tool_output"
+					}
+					if f.target != "json_tool_output" && f.target != "mcp_tool_output" {
+						"message"
+					}
+				}
+
 				proofRequired: f.target != "turn_start_additional_context"
 
 				expectedItemKind: {
@@ -70,7 +83,7 @@ projection: #ContextProjection & {
 						"function_call_output"
 					}
 					if f.target == "mcp_tool_output" {
-						"mcp_tool_call_output"
+						"function_call_output"
 					}
 					if f.target != "json_tool_output" && f.target != "mcp_tool_output" {
 						"message"

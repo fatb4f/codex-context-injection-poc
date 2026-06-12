@@ -29,6 +29,8 @@ ResponseInputItem::CustomToolCallOutput
 ResponseInputItem::McpToolCallOutput
 ```
 
+In this POC, the generated proof treats both JSON tool output and MCP tool output as `tool_output` channel surfaces, with `function_call_output` as the runtime item kind asserted by the upstream patch. The important invariant is that neither surface is native model-input context.
+
 ## Upstream pin
 
 ```text

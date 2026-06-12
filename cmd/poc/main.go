@@ -30,6 +30,7 @@ type projectedFragment struct {
 	ID                        string `json:"id"`
 	SourceID                  string `json:"sourceID"`
 	Target                    string `json:"target"`
+	ExpectedChannel           string `json:"expectedChannel"`
 	ExpectedNativeContextBool bool   `json:"expectedNativeContextInjection"`
 	ProofRequired             bool   `json:"proofRequired"`
 	ExpectedItemKind          string `json:"expectedItemKind"`
@@ -125,6 +126,30 @@ func validateProofConsistency() error {
 	}
 	if err := compareProofCases("testdata/expected_report.json", reportCases, expectedProofCases); err != nil {
 		return err
+	}
+	if err := validateProjectionSemantics(projection.Fragments); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateProjectionSemantics(frags map[string]projectedFragment) error {
+	for id, frag := range frags {
+		wantChannel := "message"
+		wantItemKind := "message"
+		if frag.Target == "json_tool_output" || frag.Target == "mcp_tool_output" {
+			wantChannel = "tool_output"
+			wantItemKind = "function_call_output"
+		}
+		if frag.ExpectedChannel != wantChannel {
+			return fmt.Errorf("%s expectedChannel=%q want %q", id, frag.ExpectedChannel, wantChannel)
+		}
+		if frag.ExpectedItemKind != wantItemKind {
+			return fmt.Errorf("%s expectedItemKind=%q want %q", id, frag.ExpectedItemKind, wantItemKind)
+		}
+		if frag.ExpectedNativeContextBool != (wantChannel == "message" && wantItemKind == "message") && frag.Target != "turn_start_additional_context" {
+			return fmt.Errorf("%s expectedNativeContextInjection=%v inconsistent with channel/itemKind", id, frag.ExpectedNativeContextBool)
+		}
 	}
 	return nil
 }
@@ -256,12 +281,12 @@ func generate() error {
 			"maxUserPromptHintTokens": 200,
 		},
 		"fragments": map[string]any{
-			"sim.internal_registry_context":     projected("sim.internal_registry_context", "sim.schema", "internal_model_context", true, true, "message", "user", "POC_SENTINEL_INTERNAL_CONTEXT", "POC_SENTINEL_INTERNAL_CONTEXT: contract/ is the only active authority root."),
-			"sim.skill_context":                 projected("sim.skill_context", "sim.schema", "available_skills", true, true, "message", "developer", "POC_SENTINEL_AVAILABLE_SKILLS", "POC_SENTINEL_AVAILABLE_SKILLS: simulated skill context."),
-			"sim.turn_start_additional_context": projected("sim.turn_start_additional_context", "sim.schema", "turn_start_additional_context", true, false, "message", "developer", "POC_SENTINEL_ADDITIONAL_CONTEXT", "POC_SENTINEL_ADDITIONAL_CONTEXT: simulated client-provided application context."),
-			"sim.prompt_hint":                   projected("sim.prompt_hint", "sim.resolver", "hook_prompt_fragment", true, true, "message", "user", "POC_SENTINEL_HOOK_HINT", "POC_SENTINEL_HOOK_HINT: selectedFragments=[sim.internal_registry_context]."),
-			"sim.json_tool_result":              projected("sim.json_tool_result", "sim.resolver", "json_tool_output", false, true, "function_call_output", "", "POC_SENTINEL_JSON_TOOL_OUTPUT", "POC_SENTINEL_JSON_TOOL_OUTPUT"),
-			"sim.mcp_tool_result":               projected("sim.mcp_tool_result", "sim.resolver", "mcp_tool_output", false, true, "mcp_tool_call_output", "", "POC_SENTINEL_MCP_TOOL_OUTPUT", "POC_SENTINEL_MCP_TOOL_OUTPUT"),
+			"sim.internal_registry_context":     projected("sim.internal_registry_context", "sim.schema", "internal_model_context", "message", true, true, "message", "user", "POC_SENTINEL_INTERNAL_CONTEXT", "POC_SENTINEL_INTERNAL_CONTEXT: contract/ is the only active authority root."),
+			"sim.skill_context":                 projected("sim.skill_context", "sim.schema", "available_skills", "message", true, true, "message", "developer", "POC_SENTINEL_AVAILABLE_SKILLS", "POC_SENTINEL_AVAILABLE_SKILLS: simulated skill context."),
+			"sim.turn_start_additional_context": projected("sim.turn_start_additional_context", "sim.schema", "turn_start_additional_context", "message", true, false, "message", "developer", "POC_SENTINEL_ADDITIONAL_CONTEXT", "POC_SENTINEL_ADDITIONAL_CONTEXT: simulated client-provided application context."),
+			"sim.prompt_hint":                   projected("sim.prompt_hint", "sim.resolver", "hook_prompt_fragment", "message", true, true, "message", "user", "POC_SENTINEL_HOOK_HINT", "POC_SENTINEL_HOOK_HINT: selectedFragments=[sim.internal_registry_context]."),
+			"sim.json_tool_result":              projected("sim.json_tool_result", "sim.resolver", "json_tool_output", "tool_output", false, true, "function_call_output", "", "POC_SENTINEL_JSON_TOOL_OUTPUT", "POC_SENTINEL_JSON_TOOL_OUTPUT"),
+			"sim.mcp_tool_result":               projected("sim.mcp_tool_result", "sim.resolver", "mcp_tool_output", "tool_output", false, true, "function_call_output", "", "POC_SENTINEL_MCP_TOOL_OUTPUT", "POC_SENTINEL_MCP_TOOL_OUTPUT"),
 		},
 	}
 
@@ -320,11 +345,12 @@ func mapFromProjection(projection map[string]any) map[string]projectedFragment {
 	return frags
 }
 
-func projected(id, sourceID, target string, native, proofRequired bool, itemKind, role, sentinel, body string) map[string]any {
+func projected(id, sourceID, target, channel string, native, proofRequired bool, itemKind, role, sentinel, body string) map[string]any {
 	m := map[string]any{
 		"id":                             id,
 		"sourceID":                       sourceID,
 		"target":                         target,
+		"expectedChannel":                channel,
 		"expectedNativeContextInjection": native,
 		"proofRequired":                  proofRequired,
 		"expectedItemKind":               itemKind,

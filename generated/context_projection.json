@@ -5,6 +5,7 @@
   },
   "fragments": {
     "sim.internal_registry_context": {
+      "expectedChannel": "message",
       "expectedItemKind": "message",
       "expectedNativeContextInjection": true,
       "expectedRole": "user",
@@ -16,6 +17,7 @@
       "target": "internal_model_context"
     },
     "sim.json_tool_result": {
+      "expectedChannel": "tool_output",
       "expectedItemKind": "function_call_output",
       "expectedNativeContextInjection": false,
       "id": "sim.json_tool_result",
@@ -26,7 +28,8 @@
       "target": "json_tool_output"
     },
     "sim.mcp_tool_result": {
-      "expectedItemKind": "mcp_tool_call_output",
+      "expectedChannel": "tool_output",
+      "expectedItemKind": "function_call_output",
       "expectedNativeContextInjection": false,
       "id": "sim.mcp_tool_result",
       "proofRequired": true,
@@ -36,6 +39,7 @@
       "target": "mcp_tool_output"
     },
     "sim.prompt_hint": {
+      "expectedChannel": "message",
       "expectedItemKind": "message",
       "expectedNativeContextInjection": true,
       "expectedRole": "user",
@@ -47,6 +51,7 @@
       "target": "hook_prompt_fragment"
     },
     "sim.skill_context": {
+      "expectedChannel": "message",
       "expectedItemKind": "message",
       "expectedNativeContextInjection": true,
       "expectedRole": "developer",
@@ -58,6 +63,7 @@
       "target": "available_skills"
     },
     "sim.turn_start_additional_context": {
+      "expectedChannel": "message",
       "expectedItemKind": "message",
       "expectedNativeContextInjection": true,
       "expectedRole": "developer",
