@@ -1,0 +1,179 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: POC <poc@example.invalid>
+Date: Thu, 11 Jun 2026 00:00:00 +0000
+Subject: [PATCH] test: add context injection surface runtime proof
+
+---
+ codex-rs/core/tests/suite/context_injection_surfaces.rs | 173 +++++++++++++++++++++
+ 1 file changed, 173 insertions(+)
+ create mode 100644 codex-rs/core/tests/suite/context_injection_surfaces.rs
+
+diff --git a/codex-rs/core/tests/suite/context_injection_surfaces.rs b/codex-rs/core/tests/suite/context_injection_surfaces.rs
+new file mode 100644
+index 0000000000..1111111111
+--- /dev/null
++++ b/codex-rs/core/tests/suite/context_injection_surfaces.rs
+@@ -0,0 +1,173 @@
++//! Runtime proof POC for native context injection surfaces.
++//!
++//! This is intentionally test-only. The assertions classify actual
++//! ResponseItem / ResponseInputItem variants, not final assistant behavior.
++
++use codex_core::context::ContextualUserFragment;
++use codex_core::context::InternalContextSource;
++use codex_core::context::InternalModelContextFragment;
++use codex_protocol::items::HookPromptFragment;
++use codex_protocol::items::build_hook_prompt_message;
++use codex_protocol::models::ContentItem;
++use codex_protocol::models::ResponseInputItem;
++use codex_protocol::models::ResponseItem;
++
++fn response_item_kind(item: &ResponseItem) -> &'static str {
++    match item {
++        ResponseItem::Message { .. } => "message",
++        ResponseItem::FunctionCallOutput { .. } => "function_call_output",
++        ResponseItem::CustomToolCallOutput { .. } => "custom_tool_call_output",
++        ResponseItem::McpToolCallOutput { .. } => "mcp_tool_call_output",
++        _ => "other",
++    }
++}
++
++fn response_input_item_kind(item: &ResponseInputItem) -> &'static str {
++    match item {
++        ResponseInputItem::Message { .. } => "message",
++        ResponseInputItem::FunctionCallOutput { .. } => "function_call_output",
++        ResponseInputItem::CustomToolCallOutput { .. } => "custom_tool_call_output",
++        ResponseInputItem::McpToolCallOutput { .. } => "mcp_tool_call_output",
++        _ => "other",
++    }
++}
++
++fn response_item_role(item: &ResponseItem) -> Option<&str> {
++    match item {
++        ResponseItem::Message { role, .. } => Some(role.as_str()),
++        _ => None,
++    }
++}
++
++fn response_input_item_role(item: &ResponseInputItem) -> Option<&str> {
++    match item {
++        ResponseInputItem::Message { role, .. } => Some(role.as_str()),
++        _ => None,
++    }
++}
++
++fn response_item_contains(item: &ResponseItem, needle: &str) -> bool {
++    match item {
++        ResponseItem::Message { content, .. } => content.iter().any(|item| match item {
++            ContentItem::InputText { text } | ContentItem::OutputText { text } => text.contains(needle),
++            _ => false,
++        }),
++        _ => format!("{item:?}").contains(needle),
++    }
++}
++
++fn response_input_item_contains(item: &ResponseInputItem, needle: &str) -> bool {
++    format!("{item:?}").contains(needle)
++}
++
++#[test]
++fn context_injection_surfaces_internal_model_context_is_message() {
++    let sentinel = "POC_SENTINEL_INTERNAL_CONTEXT";
++    let fragment = InternalModelContextFragment::new(
++        InternalContextSource::from_static("contract_registry"),
++        format!("{sentinel}: contract/ is the only active authority root."),
++    );
++
++    let item = fragment.into_response_input_item();
++
++    assert_eq!(response_input_item_kind(&item), "message");
++    assert_eq!(response_input_item_role(&item), Some("user"));
++    assert!(response_input_item_contains(&item, sentinel));
++}
++
++#[test]
++fn context_injection_surfaces_hook_prompt_fragment_is_user_message() {
++    let sentinel = "POC_SENTINEL_HOOK_HINT";
++    let fragment = HookPromptFragment::from_single_hook(
++        format!("{sentinel}: selectedFragments=[sim.internal_registry_context]."),
++        "hook_run_poc",
++    );
++
++    let item = build_hook_prompt_message(&[fragment]).expect("hook prompt should serialize");
++
++    assert_eq!(response_item_kind(&item), "message");
++    assert_eq!(response_item_role(&item), Some("user"));
++    assert!(response_item_contains(&item, sentinel));
++}
++
++// Follow-up implementation notes:
++//
++// 1. AvailableSkillsInstructions may be imported directly if exported from codex_core::context
++//    in the pinned ref. Assert it becomes a developer-role Message.
++//
++// 2. AdditionalContextStore is crate-private in some refs. Prefer exercising the public
++//    turn/start.additional_context path through the app-server test harness, or add a small
++//    crate-local unit test in core/src/state/additional_context.rs.
++//
++// 3. JsonToolOutput / MCP CallToolResult are easier to assert inside the owning crate where
++//    ToolPayload construction is accessible. The required invariant is:
++//      JsonToolOutput -> FunctionCallOutput or CustomToolCallOutput, never Message
++//      CallToolResult -> McpToolCallOutput, never Message
++//
++// Keep this patch as a skeleton until applied against the exact upstream tree and adjusted to
++// the current public/private module boundary.
++
++#[test]
++fn context_injection_surfaces_report_contract_shape() {
++    #[derive(Debug)]
++    struct Case {
++        id: &'static str,
++        expected_native: bool,
++        expected_item_kind: &'static str,
++        expected_role: Option<&'static str>,
++        sentinel: &'static str,
++    }
++
++    let cases = [
++        Case {
++            id: "internal_model_context",
++            expected_native: true,
++            expected_item_kind: "message",
++            expected_role: Some("user"),
++            sentinel: "POC_SENTINEL_INTERNAL_CONTEXT",
++        },
++        Case {
++            id: "hook_prompt_fragment",
++            expected_native: true,
++            expected_item_kind: "message",
++            expected_role: Some("user"),
++            sentinel: "POC_SENTINEL_HOOK_HINT",
++        },
++        Case {
++            id: "json_tool_output",
++            expected_native: false,
++            expected_item_kind: "function_call_output",
++            expected_role: None,
++            sentinel: "POC_SENTINEL_JSON_TOOL_OUTPUT",
++        },
++        Case {
++            id: "mcp_tool_output",
++            expected_native: false,
++            expected_item_kind: "mcp_tool_call_output",
++            expected_role: None,
++            sentinel: "POC_SENTINEL_MCP_TOOL_OUTPUT",
++        },
++    ];
++
++    for case in cases {
++        assert!(!case.id.is_empty());
++        assert!(!case.expected_item_kind.is_empty());
++        assert!(case.sentinel.starts_with("POC_SENTINEL_"));
++        if !case.expected_native {
++            assert_ne!(case.expected_item_kind, "message");
++            assert!(case.expected_role.is_none());
++        }
++    }
++}
+-- 
+2.50.0

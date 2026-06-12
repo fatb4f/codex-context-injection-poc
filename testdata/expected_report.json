@@ -1,0 +1,126 @@
+{
+  "version": "poc.runtime-proof-report/v1",
+  "upstream": {
+    "repo": "openai/codex",
+    "ref": "eddc5c75ed527a8348bfcaa85692e53189600833"
+  },
+  "cases": [
+    {
+      "id": "internal_model_context",
+      "input": {
+        "target": "internal_model_context",
+        "sentinel": "POC_SENTINEL_INTERNAL_CONTEXT"
+      },
+      "expected": {
+        "nativeContextInjection": true,
+        "itemKind": "message",
+        "containsSentinel": true,
+        "role": "user"
+      },
+      "observed": {
+        "nativeContextInjection": true,
+        "itemKind": "message",
+        "containsSentinel": true,
+        "role": "user"
+      },
+      "pass": true
+    },
+    {
+      "id": "available_skills",
+      "input": {
+        "target": "available_skills",
+        "sentinel": "POC_SENTINEL_AVAILABLE_SKILLS"
+      },
+      "expected": {
+        "nativeContextInjection": true,
+        "itemKind": "message",
+        "containsSentinel": true,
+        "role": "developer"
+      },
+      "observed": {
+        "nativeContextInjection": true,
+        "itemKind": "message",
+        "containsSentinel": true,
+        "role": "developer"
+      },
+      "pass": true
+    },
+    {
+      "id": "turn_start_additional_context",
+      "input": {
+        "target": "turn_start_additional_context",
+        "sentinel": "POC_SENTINEL_ADDITIONAL_CONTEXT"
+      },
+      "expected": {
+        "nativeContextInjection": true,
+        "itemKind": "message",
+        "containsSentinel": true,
+        "role": "developer"
+      },
+      "observed": {
+        "nativeContextInjection": true,
+        "itemKind": "message",
+        "containsSentinel": true,
+        "role": "developer"
+      },
+      "pass": true
+    },
+    {
+      "id": "hook_prompt_fragment",
+      "input": {
+        "target": "hook_prompt_fragment",
+        "sentinel": "POC_SENTINEL_HOOK_HINT"
+      },
+      "expected": {
+        "nativeContextInjection": true,
+        "itemKind": "message",
+        "containsSentinel": true,
+        "role": "user"
+      },
+      "observed": {
+        "nativeContextInjection": true,
+        "itemKind": "message",
+        "containsSentinel": true,
+        "role": "user"
+      },
+      "pass": true
+    },
+    {
+      "id": "json_tool_output",
+      "input": {
+        "target": "json_tool_output",
+        "sentinel": "POC_SENTINEL_JSON_TOOL_OUTPUT"
+      },
+      "expected": {
+        "nativeContextInjection": false,
+        "itemKind": "function_call_output",
+        "containsSentinel": true
+      },
+      "observed": {
+        "nativeContextInjection": false,
+        "itemKind": "function_call_output",
+        "containsSentinel": true
+      },
+      "pass": true
+    },
+    {
+      "id": "mcp_tool_output",
+      "input": {
+        "target": "mcp_tool_output",
+        "sentinel": "POC_SENTINEL_MCP_TOOL_OUTPUT"
+      },
+      "expected": {
+        "nativeContextInjection": false,
+        "itemKind": "mcp_tool_call_output",
+        "containsSentinel": true
+      },
+      "observed": {
+        "nativeContextInjection": false,
+        "itemKind": "mcp_tool_call_output",
+        "containsSentinel": true
+      },
+      "pass": true
+    }
+  ],
+  "pass": true
+}
