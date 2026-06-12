@@ -1,0 +1,101 @@
+[
+  {
+    "additionalContext": {
+      "channel": "message",
+      "itemKind": "message",
+      "nativeContextInjection": true
+    },
+    "class": "architecture",
+    "confidence": 0.72,
+    "emitsFullRegistry": false,
+    "hints": {
+      "constraints": [
+        "Use only declared fragments."
+      ],
+      "nextActions": [
+        "Apply the selected route."
+      ],
+      "objective": "Validate the resolver boundary."
+    },
+    "id": "architecture",
+    "requiresDerivation": true,
+    "selectedFragments": [
+      "sim.internal_registry_context",
+      "sim.prompt_hint"
+    ]
+  },
+  {
+    "additionalContext": {
+      "channel": "message",
+      "itemKind": "message",
+      "nativeContextInjection": true
+    },
+    "class": "dotfiles",
+    "confidence": 0.94,
+    "emitsFullRegistry": false,
+    "hints": {
+      "constraints": [
+        "Use only declared fragments."
+      ],
+      "nextActions": [
+        "Apply the selected route."
+      ],
+      "objective": "Route a Lua dotfiles task."
+    },
+    "id": "dotfiles-lua",
+    "requiresDerivation": false,
+    "selectedFragments": [
+      "sim.skill_context"
+    ]
+  },
+  {
+    "additionalContext": {
+      "channel": "message",
+      "itemKind": "message",
+      "nativeContextInjection": true
+    },
+    "class": "issue-generation",
+    "confidence": 0.97,
+    "emitsFullRegistry": false,
+    "hints": {
+      "constraints": [
+        "Use only declared fragments."
+      ],
+      "nextActions": [
+        "Apply the selected route."
+      ],
+      "objective": "Generate a scoped issue."
+    },
+    "id": "simple-issue",
+    "requiresDerivation": false,
+    "selectedFragments": [
+      "sim.prompt_hint"
+    ]
+  },
+  {
+    "additionalContext": {
+      "channel": "message",
+      "itemKind": "message",
+      "nativeContextInjection": true
+    },
+    "class": "resolver-design",
+    "confidence": 0.68,
+    "emitsFullRegistry": false,
+    "hints": {
+      "constraints": [
+        "Use only declared fragments."
+      ],
+      "nextActions": [
+        "Apply the selected route."
+      ],
+      "objective": "Design a complex resolver change."
+    },
+    "id": "complex-resolver-design",
+    "requiresDerivation": true,
+    "selectedFragments": [
+      "sim.internal_registry_context",
+      "sim.skill_context",
+      "sim.prompt_hint"
+    ]
+  }
+]

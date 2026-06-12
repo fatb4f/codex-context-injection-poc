@@ -1,0 +1,55 @@
+[
+  {
+    "accepted": true,
+    "derivation": {
+      "advisoryOnly": true,
+      "hints": {
+        "constraints": [
+          "Do not emit the full registry.",
+          "Do not treat tool output as implied context."
+        ],
+        "forbiddenAssumptions": [
+          "MCP output is native model context."
+        ],
+        "objective": "Validate prompt-time selection and advisory derivation.",
+        "suggestedNextActions": [
+          "Vet selected fragments.",
+          "Inject only compact additionalContext."
+        ]
+      },
+      "routeID": "complex-resolver-design",
+      "selectedFragments": [
+        "sim.internal_registry_context",
+        "sim.prompt_hint"
+      ],
+      "source": "sdk-resolver",
+      "summary": "Preserve native registry delivery while adding vetted prompt-time hints.",
+      "validity": {
+        "cueValidated": true
+      }
+    },
+    "fallback": "none",
+    "id": "complex-valid",
+    "injection": {
+      "channel": "message",
+      "itemKind": "message",
+      "nativeContextInjection": true,
+      "toolResultNativeContextInjection": false
+    },
+    "outputValid": true,
+    "routeID": "complex-resolver-design"
+  },
+  {
+    "accepted": false,
+    "fallback": "route-only",
+    "id": "architecture-invalid",
+    "injection": {
+      "channel": "none",
+      "itemKind": "none",
+      "nativeContextInjection": false,
+      "toolResultNativeContextInjection": false
+    },
+    "outputValid": false,
+    "routeID": "architecture"
+  }
+]

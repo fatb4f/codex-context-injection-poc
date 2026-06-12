@@ -1,0 +1,42 @@
+{
+  "pass": true,
+  "proofs": [
+    {
+      "id": "prompt_route_declared_fragments",
+      "pass": true
+    },
+    {
+      "id": "prompt_route_no_registry_delivery",
+      "pass": true
+    },
+    {
+      "id": "prompt_route_additional_context_is_message",
+      "pass": true
+    },
+    {
+      "id": "sdk_derivation_optional",
+      "pass": true
+    },
+    {
+      "id": "sdk_derivation_schema_valid",
+      "pass": true
+    },
+    {
+      "id": "sdk_derivation_advisory_only",
+      "pass": true
+    },
+    {
+      "id": "sdk_derivation_compact_hint_only",
+      "pass": true
+    },
+    {
+      "id": "sdk_derivation_not_tool_context",
+      "pass": true
+    },
+    {
+      "id": "mcp_registry_resource_rejected_as_context",
+      "pass": true
+    }
+  ],
+  "version": "poc.stage2-proof-report/v1"
+}

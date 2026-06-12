@@ -52,6 +52,9 @@ generated/
   context_projection.json      # deterministic projection fixture
   hook_prompt_hints.json       # prompt-time hint fixture
   proof_cases.json             # expected runtime item-shape cases
+  prompt_routes.json           # Stage 2 prompt selection fixtures
+  prompt_derivation_cases.json # valid and discarded advisory derivations
+  stage2_expected_report.json  # Stage 2 boundary proof report
 
 cmd/poc/
   main.go                      # small Go adapter CLI
@@ -124,3 +127,32 @@ JsonToolOutput / MCP CallToolResult
 ```
 
 It does not prove the final production registry layout.
+
+## Stage 2 prompt-time boundary
+
+Stage 2 validates prompt-time selection without changing the Stage 1 runtime
+boundary:
+
+```text
+turnStart registry fragment
+  -> stable native message context
+
+UserPromptSubmit
+  -> selects declared fragment IDs
+  -> emits compact message additionalContext
+  -> never emits the full registry
+
+optional SDK/subagent resolver
+  -> runs only when the route requires derivation
+  -> returns advisoryOnly hints
+  -> must pass CUE-shaped validation before message injection
+  -> invalid output is discarded with a route-only fallback
+
+MCP/tool result
+  -> evidence/result plane
+  -> expectedNativeContextInjection: false
+```
+
+The resolver model policy is explicit and bounded: `gpt-5.4-mini` produces at
+most 2048 advisory tokens, while escalation to `gpt-5.5` is limited to the
+declared low-confidence, derivation-required, or schema-retry conditions.
