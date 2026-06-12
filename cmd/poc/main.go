@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -19,6 +20,22 @@ type proofCase struct {
 	ObservedRole              string `json:"observedRole,omitempty"`
 	ContainsSentinel          bool   `json:"containsSentinel"`
 	Pass                      bool   `json:"pass"`
+}
+
+type projectionFixture struct {
+	Fragments map[string]projectedFragment `json:"fragments"`
+}
+
+type projectedFragment struct {
+	ID                        string `json:"id"`
+	SourceID                  string `json:"sourceID"`
+	Target                    string `json:"target"`
+	ExpectedNativeContextBool bool   `json:"expectedNativeContextInjection"`
+	ProofRequired             bool   `json:"proofRequired"`
+	ExpectedItemKind          string `json:"expectedItemKind"`
+	ExpectedRole              string `json:"expectedRole,omitempty"`
+	Sentinel                  string `json:"sentinel"`
+	RenderedBody              string `json:"renderedBody"`
 }
 
 func main() {
@@ -69,6 +86,10 @@ func validate() error {
 		}
 	}
 
+	if err := validateProofConsistency(); err != nil {
+		return err
+	}
+
 	if _, err := exec.LookPath("cue"); err == nil {
 		cmd := exec.Command("cue", "vet", "./contract/...")
 		cmd.Stdout = os.Stdout
@@ -84,6 +105,30 @@ func validate() error {
 	return nil
 }
 
+func validateProofConsistency() error {
+	var projection projectionFixture
+	if err := readJSON("generated/context_projection.json", &projection); err != nil {
+		return err
+	}
+	proofCases, err := readProofCases("generated/proof_cases.json")
+	if err != nil {
+		return err
+	}
+	reportCases, err := readProofCases("testdata/expected_report.json")
+	if err != nil {
+		return err
+	}
+
+	expectedProofCases := proofCasesFromProjection(projection.Fragments, true)
+	if err := compareProofCases("generated/proof_cases.json", proofCases, expectedProofCases); err != nil {
+		return err
+	}
+	if err := compareProofCases("testdata/expected_report.json", reportCases, expectedProofCases); err != nil {
+		return err
+	}
+	return nil
+}
+
 func validateJSON(path string) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -94,6 +139,112 @@ func validateJSON(path string) error {
 		return fmt.Errorf("invalid JSON %s: %w", path, err)
 	}
 	return nil
+}
+
+func readJSON(path string, target any) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(data, target); err != nil {
+		return fmt.Errorf("invalid JSON %s: %w", path, err)
+	}
+	return nil
+}
+
+func readProofCases(path string) ([]proofCase, error) {
+	var cases []proofCase
+	if err := readJSON(path, &cases); err != nil {
+		var report struct {
+			Cases []proofCase `json:"cases"`
+		}
+		if err2 := readJSON(path, &report); err2 != nil {
+			return nil, err
+		}
+		return report.Cases, nil
+	}
+	return cases, nil
+}
+
+func compareProofCases(path string, actual, expected []proofCase) error {
+	if len(actual) != len(expected) {
+		return fmt.Errorf("%s has %d cases, want %d", path, len(actual), len(expected))
+	}
+	for i := range actual {
+		if actual[i] != expected[i] {
+			return fmt.Errorf("%s case %d mismatch: got %#v want %#v", path, i, actual[i], expected[i])
+		}
+	}
+	return nil
+}
+
+func proofCasesFromProjection(frags map[string]projectedFragment, proofRequired bool) []proofCase {
+	type rankedFragment struct {
+		key  string
+		frag projectedFragment
+		rank int
+	}
+	items := make([]rankedFragment, 0, len(frags))
+	for id, frag := range frags {
+		if frag.ProofRequired == proofRequired {
+			items = append(items, rankedFragment{key: id, frag: frag, rank: targetRank(frag.Target)})
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].rank != items[j].rank {
+			return items[i].rank < items[j].rank
+		}
+		return items[i].key < items[j].key
+	})
+	cases := make([]proofCase, 0, len(items))
+	for _, item := range items {
+		frag := item.frag
+		cases = append(cases, proofCase{
+			ID:                        targetCaseID(frag.Target),
+			ExpectedNativeContextBool: frag.ExpectedNativeContextBool,
+			ObservedItemKind:          frag.ExpectedItemKind,
+			ObservedRole:              frag.ExpectedRole,
+			ContainsSentinel:          true,
+			Pass:                      true,
+		})
+	}
+	return cases
+}
+
+func targetRank(target string) int {
+	switch target {
+	case "internal_model_context":
+		return 0
+	case "available_skills":
+		return 1
+	case "hook_prompt_fragment":
+		return 2
+	case "json_tool_output":
+		return 3
+	case "mcp_tool_output":
+		return 4
+	default:
+		return 100
+	}
+}
+
+func targetCaseID(target string) string {
+	switch target {
+	case "internal_model_context":
+		return "internal_model_context"
+	case "available_skills":
+		return "available_skills"
+	case "hook_prompt_fragment":
+		return "hook_prompt_fragment"
+	case "json_tool_output":
+		return "json_tool_output"
+	case "mcp_tool_output":
+		return "mcp_tool_output"
+	case "turn_start_additional_context":
+		return "turn_start_additional_context"
+	default:
+		return target
+	}
 }
 
 func generate() error {
@@ -114,13 +265,7 @@ func generate() error {
 		},
 	}
 
-	proofCases := []proofCase{
-		{"internal_model_context", true, "message", "user", true, true},
-		{"available_skills", true, "message", "developer", true, true},
-		{"hook_prompt_fragment", true, "message", "user", true, true},
-		{"json_tool_output", false, "function_call_output", "", true, true},
-		{"mcp_tool_output", false, "mcp_tool_call_output", "", true, true},
-	}
+	proofCases := proofCasesFromProjection(mapFromProjection(projection), true)
 
 	report := map[string]any{
 		"version": "poc.runtime-proof-report/v1",
@@ -161,6 +306,18 @@ func generate() error {
 		return err
 	}
 	return validate()
+}
+
+func mapFromProjection(projection map[string]any) map[string]projectedFragment {
+	rawFragments, _ := projection["fragments"].(map[string]any)
+	frags := make(map[string]projectedFragment, len(rawFragments))
+	for id, raw := range rawFragments {
+		b, _ := json.Marshal(raw)
+		var frag projectedFragment
+		_ = json.Unmarshal(b, &frag)
+		frags[id] = frag
+	}
+	return frags
 }
 
 func projected(id, sourceID, target string, native, proofRequired bool, itemKind, role, sentinel, body string) map[string]any {
